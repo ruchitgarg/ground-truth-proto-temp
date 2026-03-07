@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>FPO Capture Links</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;margin:0;background:#f5f5f7;color:#111}.wrap{max-width:1200px;margin:0 auto;padding:16px}.top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.top input,.top select{height:38px;border:1px solid #ddd;border-radius:10px;padding:0 10px}.card{background:#fff;border:1px solid #e6e6eb;border-radius:14px;padding:10px;margin-top:10px}.row{display:grid;grid-template-columns:1.7fr 110px 120px 90px 1fr;gap:8px;align-items:center}.head{font-size:12px;color:#666;font-weight:600}.muted{font-size:12px;color:#666}a{font-size:12px;word-break:break-all}</style></head>
+<body><div class='wrap'><h2>FPO Ground Truth Links (static temp)</h2><div class='muted'>Unique URL format: capture?p=phone&l=lang</div>
+<div class='top'><input id='q' placeholder='Search FPO / phone / state'/><select id='l'><option value=''>Any language</option><option>hi</option><option>pa</option><option>ta</option><option>te</option><option>mr</option><option>gu</option><option>bn</option><option>ml</option><option>kn</option><option>or</option></select><div id='stat' class='muted'></div></div>
+<div class='card head row'><div>FPO</div><div>Phone</div><div>State</div><div>Lang</div><div>URL</div></div><div id='list'></div></div>
+<script>
+let all=[]; const list=document.getElementById('list');
+function esc(v){return String(v??'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
+function render(){const q=(document.getElementById('q').value||'').toLowerCase().trim(); const l=(document.getElementById('l').value||'').trim(); const rows=all.filter(r=>{const b=(r.fpoName+' '+r.phone+' '+r.state+' '+r.district).toLowerCase(); if(q&&!b.includes(q)) return false; if(l&&r.language!==l) return false; return true;}); stat.textContent=`${rows.length} shown / ${all.length} total`; list.innerHTML=''; rows.forEach(r=>{const d=document.createElement('div'); d.className='card row'; d.innerHTML=`<div><div>${esc(r.fpoName)}</div><div class='muted'>${esc(r.district||'')}</div></div><div>${esc(r.phone)}</div><div>${esc(r.state||'-')}</div><div>${esc(r.language)}</div><div><a href='${esc(r.url)}' target='_blank'>${esc(r.url)}</a></div>`; list.appendChild(d);});}
+fetch('./fpo-links-data.json').then(r=>r.json()).then(j=>{all=j; render();});
+q.oninput=render; l.onchange=render;
+</script></body></html>
