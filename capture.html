@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Capture Prototype</title>
+<style>body{margin:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;color:#111}.wrap{max-width:560px;margin:20px auto;padding:0 14px}.card{background:#fff;border:1px solid #e6e6eb;border-radius:18px;padding:16px}.pill{display:inline-block;padding:7px 12px;border:1px solid #e6e6eb;border-radius:999px;color:#666;font-size:13px}.h1{font-size:40px;line-height:1.05;font-weight:800;margin:12px 0}.sub{font-size:20px;color:#555;margin:0 0 14px}.btn{width:100%;height:74px;border:none;border-radius:18px;font-size:34px;font-weight:800}.green{background:#21a447;color:#fff}.gray{background:#d1d1d6;color:#8e8e93;margin-top:10px}.helper{font-size:20px;color:#666;margin-top:10px}</style></head>
+<body><div class='wrap'><div class='card'><div class='pill' id='step'>Step 1 of 2</div><div class='h1' id='title'>Capture photo or video</div><div class='sub' id='sub'>Take a clear photo or short video of field/crop.</div><button class='btn green' id='upload'>📷 Upload Photo or Video</button><div class='helper' id='help'>If camera does not open, pick from gallery.</div><button class='btn gray' id='next'>Next</button></div></div>
+<script>
+const i18n={
+ en:{step:'Step 1 of 2',title:'Capture photo or video',sub:'Take a clear photo or short video of field/crop.',upload:'📷 Upload Photo or Video',help:'If camera does not open, pick from gallery.',next:'Next'},
+ hi:{step:'स्टेप 1 में से 2',title:'फोटो या वीडियो लें',sub:'खेत या फसल की साफ फोटो या छोटा वीडियो लें।',upload:'📷 फोटो या वीडियो अपलोड करें',help:'कैमरा न खुले तो गैलरी से चुनें।',next:'आगे बढ़ें'},
+ pa:{step:'2 ਵਿੱਚੋਂ ਕਦਮ 1',title:'ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਲਓ',sub:'ਖੇਤ ਜਾਂ ਫਸਲ ਦੀ ਸਾਫ ਫੋਟੋ ਜਾਂ ਛੋਟੀ ਵੀਡੀਓ ਲਓ।',upload:'📷 ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਅੱਪਲੋਡ ਕਰੋ',help:'ਜੇ ਕੈਮਰਾ ਨਾ ਖੁੱਲੇ ਤਾਂ ਗੈਲਰੀ ਤੋਂ ਚੁਣੋ।',next:'ਅੱਗੇ ਜਾਓ'}
+};
+const q=new URLSearchParams(location.search); const l=(q.get('l')||'hi').toLowerCase(); const t=i18n[l]||i18n.hi;
+step.textContent=t.step; title.textContent=t.title; sub.textContent=t.sub; upload.textContent=t.upload; help.textContent=t.help; next.textContent=t.next;
+</script></body></html>
