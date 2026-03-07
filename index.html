@@ -1,17 +1,44 @@
 <!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Ground Truth Map Prototype</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<style>body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;background:#f5f5f7;color:#111}.top{padding:14px 16px;background:#fff;border-bottom:1px solid #e6e6eb;position:sticky;top:0}.app{display:grid;grid-template-columns:380px 1fr 360px;gap:10px;padding:10px;height:calc(100vh - 68px)}.panel{background:#fff;border:1px solid #e6e6eb;border-radius:16px;overflow:hidden}.head{padding:10px 12px;border-bottom:1px solid #eee;color:#666;font-size:13px}.list{overflow:auto;height:100%}.card{display:grid;grid-template-columns:72px 1fr;gap:8px;padding:8px;margin:8px;border:1px solid #eee;border-radius:12px;cursor:pointer}.card img{width:72px;height:72px;border-radius:8px;object-fit:cover}.map{height:100%}.detail{padding:12px;overflow:auto;height:100%}.chip{display:inline-block;background:#f2f2f5;border:1px solid #e6e6eb;border-radius:999px;padding:3px 8px;font-size:11px;margin-right:6px}.muted{color:#666;font-size:12px}.hero{font-weight:700;font-size:22px}</style></head>
-<body><div class='top'><div class='hero'>Ground Truth Inbox Prototype</div><div class='muted'>GitHub Pages temp build for UX iteration</div></div>
-<div class='app'><div class='panel'><div class='head'>Uploads</div><div class='list' id='list'></div></div><div class='panel'><div class='head'>Map Pins</div><div id='map' class='map'></div></div><div class='panel'><div class='head'>Details</div><div class='detail' id='detail'>Select an item</div></div></div>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;background:#f5f5f7;color:#111}
+.top{padding:14px 16px;background:#fff;border-bottom:1px solid #e6e6eb;position:sticky;top:0;z-index:10}
+.hero{font-weight:700;font-size:22px}.muted{color:#666;font-size:12px}
+.filters{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin-top:10px}
+.filters input,.filters select,.filters button{height:38px;border-radius:10px;border:1px solid #ddd;padding:0 10px;font-size:13px;background:#fff}
+.filters button{background:#111;color:#fff;border:0;font-weight:600;cursor:pointer}
+.app{display:grid;grid-template-columns:380px 1fr 360px;gap:10px;padding:10px;height:calc(100vh - 132px)}
+.panel{background:#fff;border:1px solid #e6e6eb;border-radius:16px;overflow:hidden}
+.head{padding:10px 12px;border-bottom:1px solid #eee;color:#666;font-size:13px}
+.list{overflow:auto;height:100%}.card{display:grid;grid-template-columns:72px 1fr;gap:8px;padding:8px;margin:8px;border:1px solid #eee;border-radius:12px;cursor:pointer}
+.card.active{outline:2px solid #11111122}.card img{width:72px;height:72px;border-radius:8px;object-fit:cover}
+.map{height:100%}.detail{padding:12px;overflow:auto;height:100%}.chip{display:inline-block;background:#f2f2f5;border:1px solid #e6e6eb;border-radius:999px;padding:3px 8px;font-size:11px;margin-right:6px}
+@media(max-width:1100px){.filters{grid-template-columns:repeat(2,minmax(120px,1fr))}.app{grid-template-columns:1fr;height:auto}.panel{min-height:45vh}}
+</style></head>
+<body><div class='top'><div class='hero'>Ground Truth Inbox Prototype</div><div class='muted'>GitHub Pages temp build for UX iteration</div>
+<div class='filters'>
+<input id='qPhone' placeholder='Phone'/>
+<input id='qState' placeholder='State'/>
+<input id='qDistrict' placeholder='District'/>
+<select id='qKind'><option value=''>Any type</option><option value='image'>Image</option><option value='video'>Video</option></select>
+<input id='qText' placeholder='Search'/>
+<button id='clear'>Clear</button>
+</div></div>
+<div class='app'><div class='panel'><div class='head' id='listHead'>Uploads</div><div class='list' id='list'></div></div><div class='panel'><div class='head'>Map Pins</div><div id='map' class='map'></div></div><div class='panel'><div class='head'>Details</div><div class='detail' id='detail'>Select an item</div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const data=[
-{name:'Upload 1',phone:'9501822210',state:'Punjab',district:'Mohali',lat:30.7046,lng:76.7179,img:'https://picsum.photos/seed/farm1/300/220',time:'2026-03-07 21:00'},
-{name:'Upload 2',phone:'9876543210',state:'Rajasthan',district:'Jaipur',lat:26.9124,lng:75.7873,img:'https://picsum.photos/seed/farm2/300/220',time:'2026-03-07 20:20'},
-{name:'Upload 3',phone:'9911223344',state:'Haryana',district:'Karnal',lat:29.6857,lng:76.9905,img:'https://picsum.photos/seed/farm3/300/220',time:'2026-03-07 19:48'}
+{name:'Upload 1',phone:'9501822210',state:'Punjab',district:'Mohali',lat:30.7046,lng:76.7179,kind:'image',img:'https://picsum.photos/seed/farm1/300/220',time:'2026-03-07 21:00'},
+{name:'Upload 2',phone:'9876543210',state:'Rajasthan',district:'Jaipur',lat:26.9124,lng:75.7873,kind:'image',img:'https://picsum.photos/seed/farm2/300/220',time:'2026-03-07 20:20'},
+{name:'Upload 3',phone:'9911223344',state:'Haryana',district:'Karnal',lat:29.6857,lng:76.9905,kind:'video',img:'https://picsum.photos/seed/farm3/300/220',time:'2026-03-07 19:48'}
 ];
-const map=L.map('map').setView([27.5,77],5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);const bounds=[];
-function select(it){document.getElementById('detail').innerHTML=`<img src='${it.img}' style='width:100%;border-radius:12px'/><div style='margin-top:8px'><span class='chip'>${it.state}</span><span class='chip'>${it.district}</span></div><div style='margin-top:8px;font-weight:600'>${it.phone}</div><div class='muted'>${it.time}</div>`;if(it.marker){map.flyTo(it.marker.getLatLng(),10,{duration:.4});it.marker.openPopup();}}
-const list=document.getElementById('list');data.forEach(it=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<img src='${it.img}'/><div><div style='font-size:13px;font-weight:600'>${it.phone}</div><div class='muted'>${it.district}, ${it.state}</div><div class='muted'>${it.time}</div></div>`;c.onclick=()=>select(it);list.appendChild(c);const m=L.marker([it.lat,it.lng]).addTo(map).bindPopup(`<b>${it.phone}</b><br>${it.district}, ${it.state}`);it.marker=m;bounds.push([it.lat,it.lng]);});
-map.fitBounds(bounds,{padding:[30,30]});select(data[0]);
+const map=L.map('map').setView([27.5,77],5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+let markers=[];let current=[];
+function esc(v){return String(v??'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
+function select(it){document.getElementById('detail').innerHTML=`<img src='${it.img}' style='width:100%;border-radius:12px'/><div style='margin-top:8px'><span class='chip'>${it.state}</span><span class='chip'>${it.district}</span><span class='chip'>${it.kind}</span></div><div style='margin-top:8px;font-weight:600'>${it.phone}</div><div class='muted'>${it.time}</div>`; if(it.marker){map.flyTo(it.marker.getLatLng(),10,{duration:.4});it.marker.openPopup();}}
+function filters(){return {phone:qPhone.value.toLowerCase().trim(),state:qState.value.toLowerCase().trim(),district:qDistrict.value.toLowerCase().trim(),kind:qKind.value,text:qText.value.toLowerCase().trim()}}
+function pass(it,f){const blob=(it.name+' '+it.phone+' '+it.state+' '+it.district+' '+it.kind).toLowerCase();if(f.phone&&!it.phone.includes(f.phone))return false;if(f.state&&!it.state.toLowerCase().includes(f.state))return false;if(f.district&&!it.district.toLowerCase().includes(f.district))return false;if(f.kind&&it.kind!==f.kind)return false;if(f.text&&!blob.includes(f.text))return false;return true}
+function render(){const f=filters();current=data.filter(d=>pass(d,f));document.getElementById('list').innerHTML='';document.getElementById('listHead').textContent=`Uploads (${current.length})`;markers.forEach(m=>map.removeLayer(m));markers=[];const b=[];current.forEach((it,idx)=>{const c=document.createElement('div');c.className='card'+(idx===0?' active':'');c.innerHTML=`<img src='${it.img}'/><div><div style='font-size:13px;font-weight:600'>${it.phone}</div><div class='muted'>${it.district}, ${it.state}</div><div class='muted'>${it.time}</div></div>`;c.onclick=()=>{document.querySelectorAll('.card').forEach(x=>x.classList.remove('active'));c.classList.add('active');select(it)};list.appendChild(c);const m=L.marker([it.lat,it.lng]).addTo(map).bindPopup(`<b>${esc(it.phone)}</b><br>${esc(it.district)}, ${esc(it.state)}`);it.marker=m;markers.push(m);b.push([it.lat,it.lng]);});if(b.length){map.fitBounds(b,{padding:[28,28]});select(current[0]);}else{detail.textContent='No results';}}
+[qPhone,qState,qDistrict,qKind,qText].forEach(el=>el.addEventListener('input',render));clear.onclick=()=>{qPhone.value='';qState.value='';qDistrict.value='';qKind.value='';qText.value='';render()};
+render();
 </script></body></html>
