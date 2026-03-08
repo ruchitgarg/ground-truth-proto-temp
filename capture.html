@@ -122,8 +122,41 @@
 
     const langs=['hi','en','pa'];
     const params=new URLSearchParams(location.search);
-    let l=(params.get('l')||'hi').toLowerCase();
-    if(!i18n[l]) l='hi';
+
+    function normalizeLang(raw){
+      const value=String(raw||'').toLowerCase().trim();
+      if(!value) return '';
+      if(i18n[value]) return value;
+      const base=value.split('-')[0];
+      return i18n[base] ? base : '';
+    }
+
+    function detectBrowserLang(){
+      const candidates=[...(navigator.languages||[]), navigator.language].filter(Boolean);
+      for(const c of candidates){
+        const n=normalizeLang(c);
+        if(n) return n;
+      }
+      return 'hi';
+    }
+
+    const legacyLang=normalizeLang(params.get('l'));
+    let l=legacyLang || detectBrowserLang();
+
+    const cleanParams=new URLSearchParams(location.search);
+    cleanParams.delete('p');
+    cleanParams.delete('l');
+
+    function buildShareUrl(){
+      const query=cleanParams.toString();
+      return `${location.origin}${location.pathname}${query?`?${query}`:''}${location.hash||''}`;
+    }
+
+    function syncCleanUrl(){
+      const query=cleanParams.toString();
+      const nextUrl=`${location.pathname}${query?`?${query}`:''}${location.hash||''}`;
+      history.replaceState({lang:st.lang},'',nextUrl);
+    }
 
     const byId=(id)=>document.getElementById(id);
     const st={lang:l, selectedMedia:null, location:null, submitted:false, payload:null};
@@ -146,11 +179,10 @@
     }
 
     function applyLang(lang){
-      st.lang=lang;
-      params.set('l', lang);
-      const nextUrl=`${location.pathname}?${params.toString()}`;
-      history.replaceState({},'',nextUrl);
-      const t=i18n[lang];
+      st.lang=normalizeLang(lang) || detectBrowserLang();
+      document.documentElement.lang=st.lang;
+      document.body.dataset.captureLang=st.lang;
+      const t=i18n[st.lang];
       byId('step').textContent=st.submitted ? t.step2 : t.step1;
       byId('title').textContent=t.title;
       byId('sub').textContent=t.sub;
@@ -161,8 +193,9 @@
       byId('waNumber').placeholder=t.waPlaceholder;
       byId('waNote').textContent=t.waNote;
       byId('waSave').textContent=t.waSave;
-      byId('preview').textContent=`${t.preview} ${location.href}`;
-      [...document.querySelectorAll('#langBtns button')].forEach(b=>b.classList.toggle('active',b.dataset.lang===lang));
+      byId('preview').textContent=`${t.preview} ${buildShareUrl()}`;
+      [...document.querySelectorAll('#langBtns button')].forEach(b=>b.classList.toggle('active',b.dataset.lang===st.lang));
+      syncCleanUrl();
       setLocationText();
       if(!st.location) setStatus('info', t.waitingLoc);
     }
@@ -231,7 +264,7 @@
       byId('submit').disabled=true;
       byId('waBox').classList.remove('hidden');
 
-      byId('preview').innerHTML=`<strong>${t.preview}</strong> ${location.href}<br><br><strong>Payload:</strong><br><pre style="white-space:pre-wrap;word-break:break-word;margin:4px 0 0">${JSON.stringify(st.payload,null,2)}</pre>`;
+      byId('preview').innerHTML=`<strong>${t.preview}</strong> ${buildShareUrl()}<br><br><strong>Payload:</strong><br><pre style="white-space:pre-wrap;word-break:break-word;margin:4px 0 0">${JSON.stringify(st.payload,null,2)}</pre>`;
 
       if(Math.random()<0.35){
         byId('coupon').classList.remove('hidden');
