@@ -1,12 +1,136 @@
-<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>FPO Capture Links</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;margin:0;background:#f5f5f7;color:#111}.wrap{max-width:1200px;margin:0 auto;padding:16px}.top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.top input,.top select{height:38px;border:1px solid #ddd;border-radius:10px;padding:0 10px}.card{background:#fff;border:1px solid #e6e6eb;border-radius:14px;padding:10px;margin-top:10px}.row{display:grid;grid-template-columns:1.7fr 110px 120px 90px 1fr;gap:8px;align-items:center}.head{font-size:12px;color:#666;font-weight:600}.muted{font-size:12px;color:#666}a{font-size:12px;word-break:break-all}</style></head>
-<body><div class='wrap'><h2>FPO Ground Truth Links (static temp)</h2><div class='muted'>Unique URL format: capture?p=phone&l=lang</div>
-<div class='top'><input id='q' placeholder='Search FPO / phone / state'/><select id='l'><option value=''>Any language</option><option>hi</option><option>pa</option><option>ta</option><option>te</option><option>mr</option><option>gu</option><option>bn</option><option>ml</option><option>kn</option><option>or</option></select><div id='stat' class='muted'></div></div>
-<div class='card head row'><div>FPO</div><div>Phone</div><div>State</div><div>Lang</div><div>URL</div></div><div id='list'></div></div>
-<script>
-let all=[]; const list=document.getElementById('list');
-function esc(v){return String(v??'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
-function render(){const q=(document.getElementById('q').value||'').toLowerCase().trim(); const l=(document.getElementById('l').value||'').trim(); const rows=all.filter(r=>{const b=(r.fpoName+' '+r.phone+' '+r.state+' '+r.district).toLowerCase(); if(q&&!b.includes(q)) return false; if(l&&r.language!==l) return false; return true;}); stat.textContent=`${rows.length} shown / ${all.length} total`; list.innerHTML=''; rows.forEach(r=>{const d=document.createElement('div'); d.className='card row'; d.innerHTML=`<div><div>${esc(r.fpoName)}</div><div class='muted'>${esc(r.district||'')}</div></div><div>${esc(r.phone)}</div><div>${esc(r.state||'-')}</div><div>${esc(r.language)}</div><div><a href='${esc(r.url)}' target='_blank'>${esc(r.url)}</a></div>`; list.appendChild(d);});}
-fetch('./fpo-links-data.json').then(r=>r.json()).then(j=>{all=j; render();});
-q.oninput=render; l.onchange=render;
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FPO Capture Links</title>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--line:#e6e6eb;--muted:#666}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;color:#111}
+    .wrap{max-width:1280px;margin:0 auto;padding:16px}
+    h2{margin:0 0 6px}
+    .muted{color:var(--muted);font-size:12px}
+    .bar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-top:12px}
+    .bar input,.bar select,.bar button{height:38px;border:1px solid #ddd;border-radius:10px;padding:0 10px;background:#fff;font-size:13px}
+    .bar button{background:#111;color:#fff;border:0;cursor:pointer;font-weight:700}
+    .stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .badge{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px}
+    .table{margin-top:10px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+    .row{display:grid;grid-template-columns:1.8fr 120px 120px 90px 100px 2fr;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f0f2}
+    .row:last-child{border-bottom:none}
+    .head{font-size:12px;font-weight:800;color:#606066;background:#fafafc;position:sticky;top:0}
+    .status-ok{color:#127d38;font-weight:700}.status-miss{color:#a23d0a;font-weight:700}
+    a{font-size:12px;word-break:break-all;color:#0a60f6;text-decoration:none}
+    a:hover{text-decoration:underline}
+    @media(max-width:1000px){.bar{grid-template-columns:1fr 1fr}.row{grid-template-columns:1.6fr 110px 80px 1fr}.hide-sm{display:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h2>FPO Ground Truth Links</h2>
+    <div class="muted">Ready-to-send format: capture?p=&lt;phone&gt;&amp;l=&lt;lang&gt;</div>
+
+    <div class="bar">
+      <input id="q" placeholder="Search FPO / phone / district / state" />
+      <select id="state"><option value="">All states</option></select>
+      <select id="lang"><option value="">All languages</option></select>
+      <select id="status"><option value="">All status</option><option value="ok">Ready</option><option value="miss">Missing phone/lang</option></select>
+      <button id="clear">Clear</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="table">
+      <div class="row head">
+        <div>FPO</div><div class="hide-sm">Phone</div><div>Lang</div><div class="hide-sm">State</div><div>Status</div><div>Unique URL</div>
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script>
+    const basePath = location.pathname.replace(/[^/]+$/, '') + 'capture.html';
+    const baseUrl = new URL(basePath, location.href).toString();
+    const byId = (id)=>document.getElementById(id);
+    let all=[];
+
+    function esc(v){return String(v ?? '').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
+    function mkUrl(phone, lang){
+      const p=(phone||'').replace(/\D/g,'');
+      const l=(lang||'').toLowerCase().trim();
+      if(!p || !l) return '';
+      return `${baseUrl}?p=${encodeURIComponent(p)}&l=${encodeURIComponent(l)}`;
+    }
+
+    function prepareRows(rows){
+      return rows.map(r=>{
+        const url=mkUrl(r.phone, r.language);
+        return {...r, phone:(r.phone||'').replace(/\D/g,''), language:(r.language||'').toLowerCase(), url, ready:!!url};
+      });
+    }
+
+    function hydrateFilters(rows){
+      const states=[...new Set(rows.map(r=>r.state).filter(Boolean))].sort();
+      const langs=[...new Set(rows.map(r=>r.language).filter(Boolean))].sort();
+      state.innerHTML='<option value="">All states</option>'+states.map(s=>`<option>${esc(s)}</option>`).join('');
+      lang.innerHTML='<option value="">All languages</option>'+langs.map(l=>`<option>${esc(l)}</option>`).join('');
+    }
+
+    function renderStats(rows){
+      const total=all.length;
+      const ready=all.filter(x=>x.ready).length;
+      const miss=total-ready;
+      const byLang={}; all.forEach(x=>{if(x.language) byLang[x.language]=(byLang[x.language]||0)+1;});
+      const langBadges=Object.entries(byLang).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`<span class="badge">${esc(k)}: ${v}</span>`).join('');
+      stats.innerHTML=`
+        <span class="badge">Shown: ${rows.length}</span>
+        <span class="badge">Total: ${total}</span>
+        <span class="badge">Ready: ${ready}</span>
+        <span class="badge">Missing: ${miss}</span>
+        ${langBadges}
+      `;
+    }
+
+    function render(){
+      const q=(byId('q').value||'').toLowerCase().trim();
+      const st=(byId('state').value||'').trim();
+      const lg=(byId('lang').value||'').trim();
+      const sx=(byId('status').value||'').trim();
+
+      const rows=all.filter(r=>{
+        const blob=(`${r.fpoName} ${r.phone} ${r.district||''} ${r.state||''}`).toLowerCase();
+        if(q && !blob.includes(q)) return false;
+        if(st && r.state!==st) return false;
+        if(lg && r.language!==lg) return false;
+        if(sx==='ok' && !r.ready) return false;
+        if(sx==='miss' && r.ready) return false;
+        return true;
+      });
+
+      renderStats(rows);
+      const list=byId('list');
+      list.innerHTML='';
+      rows.forEach(r=>{
+        const d=document.createElement('div'); d.className='row';
+        d.innerHTML=`
+          <div><div>${esc(r.fpoName)}</div><div class="muted">${esc(r.district||'')}</div></div>
+          <div class="hide-sm">${esc(r.phone||'-')}</div>
+          <div>${esc(r.language||'-')}</div>
+          <div class="hide-sm">${esc(r.state||'-')}</div>
+          <div class="${r.ready?'status-ok':'status-miss'}">${r.ready?'Ready':'Missing'}</div>
+          <div>${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>`:'-'}</div>
+        `;
+        list.appendChild(d);
+      });
+    }
+
+    fetch('./fpo-links-data.json')
+      .then(r=>r.json())
+      .then(rows=>{ all=prepareRows(rows); hydrateFilters(all); render(); })
+      .catch(()=>{ byId('stats').innerHTML='<span class="badge">Could not load fpo-links-data.json</span>'; });
+
+    ;['q','state','lang','status'].forEach(id=>byId(id).addEventListener(id==='q'?'input':'change',render));
+    byId('clear').onclick=()=>{ byId('q').value=''; byId('state').value=''; byId('lang').value=''; byId('status').value=''; render(); };
+  </script>
+</body>
+</html>

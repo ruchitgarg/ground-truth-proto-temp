@@ -1,12 +1,82 @@
-<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Capture Prototype</title>
-<style>body{margin:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;color:#111}.wrap{max-width:560px;margin:20px auto;padding:0 14px}.card{background:#fff;border:1px solid #e6e6eb;border-radius:18px;padding:16px}.pill{display:inline-block;padding:7px 12px;border:1px solid #e6e6eb;border-radius:999px;color:#666;font-size:13px}.h1{font-size:40px;line-height:1.05;font-weight:800;margin:12px 0}.sub{font-size:20px;color:#555;margin:0 0 14px}.btn{width:100%;height:74px;border:none;border-radius:18px;font-size:34px;font-weight:800}.green{background:#21a447;color:#fff}.gray{background:#d1d1d6;color:#8e8e93;margin-top:10px}.helper{font-size:20px;color:#666;margin-top:10px}</style></head>
-<body><div class='wrap'><div class='card'><div class='pill' id='step'>Step 1 of 2</div><div class='h1' id='title'>Capture photo or video</div><div class='sub' id='sub'>Take a clear photo or short video of field/crop.</div><button class='btn green' id='upload'>📷 Upload Photo or Video</button><div class='helper' id='help'>If camera does not open, pick from gallery.</div><button class='btn gray' id='next'>Next</button></div></div>
-<script>
-const i18n={
- en:{step:'Step 1 of 2',title:'Capture photo or video',sub:'Take a clear photo or short video of field/crop.',upload:'📷 Upload Photo or Video',help:'If camera does not open, pick from gallery.',next:'Next'},
- hi:{step:'स्टेप 1 में से 2',title:'फोटो या वीडियो लें',sub:'खेत या फसल की साफ फोटो या छोटा वीडियो लें।',upload:'📷 फोटो या वीडियो अपलोड करें',help:'कैमरा न खुले तो गैलरी से चुनें।',next:'आगे बढ़ें'},
- pa:{step:'2 ਵਿੱਚੋਂ ਕਦਮ 1',title:'ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਲਓ',sub:'ਖੇਤ ਜਾਂ ਫਸਲ ਦੀ ਸਾਫ ਫੋਟੋ ਜਾਂ ਛੋਟੀ ਵੀਡੀਓ ਲਓ।',upload:'📷 ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਅੱਪਲੋਡ ਕਰੋ',help:'ਜੇ ਕੈਮਰਾ ਨਾ ਖੁੱਲੇ ਤਾਂ ਗੈਲਰੀ ਤੋਂ ਚੁਣੋ।',next:'ਅੱਗੇ ਜਾਓ'}
-};
-const q=new URLSearchParams(location.search); const l=(q.get('l')||'hi').toLowerCase(); const t=i18n[l]||i18n.hi;
-step.textContent=t.step; title.textContent=t.title; sub.textContent=t.sub; upload.textContent=t.upload; help.textContent=t.help; next.textContent=t.next;
-</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ground Truth Capture</title>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#5f5f63;--line:#e5e5ea;--green:#1f9d45;--green2:#19803a}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif}
+    .wrap{max-width:640px;margin:0 auto;padding:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 6px 20px #00000008}
+    .lang{display:flex;gap:8px;flex-wrap:wrap}
+    .lang button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;font-size:16px;font-weight:650;cursor:pointer}
+    .lang button.active{background:#111;color:#fff;border-color:#111}
+    .step{display:inline-block;margin-top:12px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);font-size:14px;color:var(--muted);font-weight:700}
+    h1{font-size:46px;line-height:1.05;margin:14px 0 10px;font-weight:850;letter-spacing:-.02em}
+    .sub{font-size:25px;line-height:1.3;color:#333;margin:0 0 16px}
+    .cta{width:100%;min-height:88px;border:none;border-radius:20px;font-size:36px;font-weight:900;cursor:pointer;letter-spacing:-.01em}
+    .primary{background:linear-gradient(180deg,var(--green),var(--green2));color:#fff}
+    .secondary{margin-top:10px;background:#e5e5ea;color:#5e5e63;font-size:32px}
+    .helper{font-size:22px;line-height:1.3;color:var(--muted);margin-top:12px}
+    .preview{margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:14px;font-size:14px;color:#555;background:#fafafa}
+    @media (max-width:560px){h1{font-size:40px}.sub{font-size:22px}.cta{font-size:30px;min-height:80px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="lang" id="langBtns"></div>
+      <div class="step" id="step"></div>
+      <h1 id="title"></h1>
+      <p class="sub" id="sub"></p>
+      <button class="cta primary" id="upload" aria-label="Upload"></button>
+      <div class="helper" id="help"></div>
+      <button class="cta secondary" id="next"></button>
+      <div class="preview" id="preview"></div>
+    </div>
+  </div>
+
+  <script>
+    const i18n = {
+      en:{name:'English', step:'Step 1 of 2', title:'Take photo or video', sub:'Capture a clear field or crop photo.', upload:'Upload Photo / Video', help:'If camera does not open, choose from gallery.', next:'Next', preview:'Link preview:'},
+      hi:{name:'हिंदी', step:'2 में से चरण 1', title:'फोटो या वीडियो लें', sub:'खेत या फसल की साफ फोटो लें।', upload:'फोटो / वीडियो अपलोड करें', help:'कैमरा न खुले तो गैलरी से चुनें।', next:'आगे बढ़ें', preview:'लिंक प्रीव्यू:'},
+      pa:{name:'ਪੰਜਾਬੀ', step:'2 ਵਿੱਚੋਂ ਕਦਮ 1', title:'ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਲਓ', sub:'ਖੇਤ ਜਾਂ ਫਸਲ ਦੀ ਸਾਫ ਫੋਟੋ ਲਓ।', upload:'ਫੋਟੋ / ਵੀਡੀਓ ਅੱਪਲੋਡ ਕਰੋ', help:'ਜੇ ਕੈਮਰਾ ਨਾ ਖੁੱਲੇ ਤਾਂ ਗੈਲਰੀ ਤੋਂ ਚੁਣੋ।', next:'ਅੱਗੇ ਜਾਓ', preview:'ਲਿੰਕ ਪ੍ਰੀਵਿਊ:'}
+    };
+
+    const langs=['hi','en','pa'];
+    const params=new URLSearchParams(location.search);
+    let l=(params.get('l')||'hi').toLowerCase();
+    if(!i18n[l]) l='hi';
+
+    const byId=(id)=>document.getElementById(id);
+    function applyLang(lang){
+      l=lang;
+      params.set('l', lang);
+      const nextUrl=`${location.pathname}?${params.toString()}`;
+      history.replaceState({},'',nextUrl);
+      const t=i18n[lang];
+      byId('step').textContent=t.step;
+      byId('title').textContent=t.title;
+      byId('sub').textContent=t.sub;
+      byId('upload').textContent=t.upload;
+      byId('help').textContent=t.help;
+      byId('next').textContent=t.next;
+      byId('preview').textContent=`${t.preview} ${location.href}`;
+      [...document.querySelectorAll('#langBtns button')].forEach(b=>b.classList.toggle('active',b.dataset.lang===lang));
+    }
+
+    const langWrap=byId('langBtns');
+    langs.forEach(code=>{
+      const b=document.createElement('button');
+      b.dataset.lang=code;
+      b.textContent=i18n[code].name;
+      b.onclick=()=>applyLang(code);
+      langWrap.appendChild(b);
+    });
+
+    applyLang(l);
+  </script>
+</body>
+</html>
