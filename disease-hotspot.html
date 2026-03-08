@@ -24,7 +24,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe U
 <input id='qPhone' placeholder='Phone'/>
 <button id='clear'>Clear</button>
 </div>
-<div class='legend' style='margin-top:8px'><span class='muted'>Hotspot Intensity:</span><span class='dot' style='background:#facc15'></span><span class='muted'>Low</span><span class='dot' style='background:#fb923c'></span><span class='muted'>Medium</span><span class='dot' style='background:#ef4444'></span><span class='muted'>High</span></div>
+<div class='legend' style='margin-top:8px'><span class='muted'>Hotspot Intensity:</span><span class='dot' style='background:#facc15'></span><span class='muted'>Low</span><span class='dot' style='background:#fb923c'></span><span class='muted'>Medium</span><span class='dot' style='background:#ef4444'></span><span class='muted'>High</span><span id='sourceBadge' class='chip'>Source: local fallback</span></div>
 </div>
 <div class='app'>
 <section class='panel'><div class='head' id='listHead'>Disease inbox</div><div id='list' class='list'></div></section>
@@ -33,27 +33,66 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe U
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const cases=[
+const STATIC_CASES=[
 {id:'c1',phone:'9501822210',state:'Punjab',district:'Mohali',disease:'Leaf Blight',severity:'high',lat:30.7046,lng:76.7179,time:'2026-03-08 06:05',note:'Rapid spread in patch A'},
 {id:'c2',phone:'9876543210',state:'Rajasthan',district:'Jaipur',disease:'Rust',severity:'medium',lat:26.9124,lng:75.7873,time:'2026-03-08 05:50',note:'Localized to edge rows'},
 {id:'c3',phone:'9911223344',state:'Haryana',district:'Karnal',disease:'Wilt',severity:'high',lat:29.6857,lng:76.9905,time:'2026-03-08 05:40',note:'Visible wilting in multiple plots'},
 {id:'c4',phone:'9898989898',state:'Punjab',district:'Ludhiana',disease:'Pest Attack',severity:'low',lat:30.9010,lng:75.8573,time:'2026-03-08 05:10',note:'Initial signs only'},
 {id:'c5',phone:'9760572040',state:'Uttar Pradesh',district:'Meerut',disease:'Leaf Blight',severity:'medium',lat:28.9845,lng:77.7064,time:'2026-03-08 04:55',note:'Scattered symptoms'}
 ];
+
+const params = new URLSearchParams(location.search);
+const INGESTION_ENDPOINT = params.get('ingest') || './hotspot-cases.json';
+
 const map=L.map('map').setView([27.5,77],5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 const layer=L.layerGroup().addTo(map);
-let filtered=[],selected='';
+let cases=[],filtered=[],selected='';
+
 function color(sev){if(sev==='high')return '#ef4444';if(sev==='medium')return '#fb923c';return '#facc15';}
 function esc(v){return String(v??'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
 function pass(c){if(qDisease.value&&c.disease!==qDisease.value)return false;if(qSeverity.value&&c.severity!==qSeverity.value)return false;if(qState.value&& !c.state.toLowerCase().includes(qState.value.toLowerCase()))return false;if(qDistrict.value&& !c.district.toLowerCase().includes(qDistrict.value.toLowerCase()))return false;if(qPhone.value&& !c.phone.includes(qPhone.value.trim()))return false;return true}
+
+function normalizeCase(item, index){
+  return {
+    id: item.id || `case-${index+1}`,
+    phone: String(item.phone || item.mobile || '').replace(/\D/g, ''),
+    state: item.state || '-',
+    district: item.district || '-',
+    disease: item.disease || item.issue || 'Unknown',
+    severity: ['high','medium','low'].includes((item.severity||'').toLowerCase()) ? item.severity.toLowerCase() : 'low',
+    lat: Number(item.lat ?? item.latitude),
+    lng: Number(item.lng ?? item.longitude),
+    time: item.time || item.createdAt || '-',
+    note: item.note || item.summary || '-'
+  };
+}
+
+async function loadCases(){
+  try{
+    const res = await fetch(INGESTION_ENDPOINT, {cache:'no-store'});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    const incoming = Array.isArray(payload) ? payload : (Array.isArray(payload.cases) ? payload.cases : []);
+    const normalized = incoming.map(normalizeCase).filter(c=>Number.isFinite(c.lat)&&Number.isFinite(c.lng));
+    if(!normalized.length) throw new Error('No valid geocoded cases from ingestion endpoint');
+    sourceBadge.textContent = `Source: ingestion (${INGESTION_ENDPOINT})`;
+    return normalized;
+  }catch(err){
+    console.warn('Falling back to static hotspot cases', err);
+    sourceBadge.textContent = 'Source: local fallback (hotspot-cases.json/static)';
+    return STATIC_CASES;
+  }
+}
+
 function draw(){filtered=cases.filter(pass);listHead.textContent=`Disease inbox (${filtered.length})`;list.innerHTML='';layer.clearLayers();const bounds=[];
-filtered.forEach(c=>{const card=document.createElement('div');card.className='card '+(c.severity==='high'?'hot':'')+(selected===c.id?' active':'');card.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><div style='margin-top:6px;font-size:13px;font-weight:600'>${c.phone}</div><div class='muted'>${c.district}, ${c.state}</div><div class='muted'>${c.time}</div>`;card.onclick=()=>select(c.id);list.appendChild(card);
-const m=L.circleMarker([c.lat,c.lng],{radius:c.severity==='high'?12:9,color:color(c.severity),fillColor:color(c.severity),fillOpacity:.75,weight:2}).addTo(layer).bindPopup(`<b>${esc(c.disease)}</b><br>${esc(c.district)}, ${esc(c.state)}<br>${esc(c.phone)}`);m.on('click',()=>select(c.id));c._marker=m;bounds.push([c.lat,c.lng]);});
+filtered.forEach(c=>{const card=document.createElement('div');card.className='card '+(c.severity==='high'?'hot':'')+(selected===c.id?' active':'');card.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><div style='margin-top:6px;font-size:13px;font-weight:600'>${c.phone||'-'}</div><div class='muted'>${c.district}, ${c.state}</div><div class='muted'>${c.time}</div>`;card.onclick=()=>select(c.id);list.appendChild(card);
+const m=L.circleMarker([c.lat,c.lng],{radius:c.severity==='high'?12:9,color:color(c.severity),fillColor:color(c.severity),fillOpacity:.75,weight:2}).addTo(layer).bindPopup(`<b>${esc(c.disease)}</b><br>${esc(c.district)}, ${esc(c.state)}<br>${esc(c.phone||'-')}`);m.on('click',()=>select(c.id));c._marker=m;bounds.push([c.lat,c.lng]);});
 if(bounds.length)map.fitBounds(bounds,{padding:[30,30]}); if(filtered.length&&!selected)select(filtered[0].id);
 if(!filtered.length){detail.textContent='No matching disease cases.';selected='';}
 }
-function select(id){selected=id;drawCardOnly();const c=filtered.find(x=>x.id===id)||cases.find(x=>x.id===id);if(!c)return;detail.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><h3 style='margin:10px 0'>${c.district}, ${c.state}</h3><div class='muted'>Phone: ${c.phone}</div><div class='muted'>Time: ${c.time}</div><p style='font-size:14px'>${c.note}</p>`; if(c._marker){map.flyTo(c._marker.getLatLng(),10,{duration:.4});c._marker.openPopup();}}
+function select(id){selected=id;drawCardOnly();const c=filtered.find(x=>x.id===id)||cases.find(x=>x.id===id);if(!c)return;detail.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><h3 style='margin:10px 0'>${c.district}, ${c.state}</h3><div class='muted'>Phone: ${c.phone||'-'}</div><div class='muted'>Time: ${c.time}</div><p style='font-size:14px'>${c.note}</p>`; if(c._marker){map.flyTo(c._marker.getLatLng(),10,{duration:.4});c._marker.openPopup();}}
 function drawCardOnly(){document.querySelectorAll('.card').forEach(el=>el.classList.remove('active'));const idx=filtered.findIndex(c=>c.id===selected);if(idx>-1){const el=document.querySelectorAll('.card')[idx];if(el)el.classList.add('active')}}
 [qDisease,qSeverity,qState,qDistrict,qPhone].forEach(el=>el.addEventListener('input',()=>{selected='';draw();}));clear.onclick=()=>{qDisease.value='';qSeverity.value='';qState.value='';qDistrict.value='';qPhone.value='';selected='';draw();};
-draw();
+
+loadCases().then(result=>{cases=result;draw();});
 </script></body></html>

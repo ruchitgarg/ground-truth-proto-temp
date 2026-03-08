@@ -1,0 +1,20 @@
+{
+  "namespace": "whatsapp.fpo.capture.v1",
+  "channel": "whatsapp-business",
+  "antiBan": {
+    "rateLimitPerSecond": 4,
+    "burstCap": 12,
+    "jitterMs": {
+      "min": 150,
+      "max": 900
+    },
+    "retry": {
+      "maxAttempts": 5,
+      "backoff": "exponential",
+      "baseDelayMs": 1000,
+      "maxDelayMs": 120000,
+      "respectRetryAfter": true,
+      "retryOnStatuses": [408, 425, 429, 500, 502, 503, 504]
+    }
+  }
+}

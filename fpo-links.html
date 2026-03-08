@@ -7,7 +7,7 @@
   <style>
     :root{--bg:#f5f5f7;--card:#fff;--line:#e6e6eb;--muted:#666}
     *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;color:#111}
-    .wrap{max-width:1280px;margin:0 auto;padding:16px}
+    .wrap{max-width:1340px;margin:0 auto;padding:16px}
     h2{margin:0 0 6px}
     .muted{color:var(--muted);font-size:12px}
     .bar{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;margin-top:12px}
@@ -16,25 +16,26 @@
     .stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
     .badge{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px}
     .table{margin-top:10px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
-    .row{display:grid;grid-template-columns:1.8fr 120px 120px 90px 100px 2fr;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f0f2}
+    .row{display:grid;grid-template-columns:1.7fr 120px 90px 90px 100px 1.3fr 1.6fr;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #f0f0f2}
     .row:last-child{border-bottom:none}
     .head{font-size:12px;font-weight:800;color:#606066;background:#fafafc;position:sticky;top:0}
     .status-ok{color:#127d38;font-weight:700}.status-miss{color:#a23d0a;font-weight:700}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#333;word-break:break-all}
     a{font-size:12px;word-break:break-all;color:#0a60f6;text-decoration:none}
     a:hover{text-decoration:underline}
-    @media(max-width:1000px){.bar{grid-template-columns:1fr 1fr}.row{grid-template-columns:1.6fr 110px 80px 1fr}.hide-sm{display:none}}
+    @media(max-width:1000px){.bar{grid-template-columns:1fr 1fr}.row{grid-template-columns:1.4fr 100px 80px 1fr}.hide-sm{display:none}}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h2>FPO Ground Truth Links</h2>
-    <div class="muted">Ready-to-send format: capture?p=&lt;phone&gt;&amp;l=&lt;lang&gt;</div>
+    <div class="muted">Ready-to-send format: capture?fpo=&lt;identifier&gt; (no phone/lang params)</div>
 
     <div class="bar">
       <input id="q" placeholder="Search FPO / phone / district / state" />
       <select id="state"><option value="">All states</option></select>
       <select id="lang"><option value="">All languages</option></select>
-      <select id="status"><option value="">All status</option><option value="ok">Ready</option><option value="miss">Missing phone/lang</option></select>
+      <select id="status"><option value="">All status</option><option value="ok">Ready</option><option value="miss">Missing identifier</option></select>
       <button id="clear">Clear</button>
     </div>
 
@@ -42,30 +43,47 @@
 
     <div class="table">
       <div class="row head">
-        <div>FPO</div><div class="hide-sm">Phone</div><div>Lang</div><div class="hide-sm">State</div><div>Status</div><div>Unique URL</div>
+        <div>FPO</div><div class="hide-sm">Phone</div><div>Lang</div><div class="hide-sm">State</div><div>Status</div><div>Queue Key</div><div>Unique URL</div>
       </div>
       <div id="list"></div>
     </div>
   </div>
 
+  <script src="./queue-utils.js"></script>
   <script>
     const basePath = location.pathname.replace(/[^/]+$/, '') + 'capture.html';
     const baseUrl = new URL(basePath, location.href).toString();
     const byId = (id)=>document.getElementById(id);
     let all=[];
+    let queueConfig = QueueUtils.DEFAULT_CONFIG;
 
     function esc(v){return String(v ?? '').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
-    function mkUrl(phone, lang){
-      const p=(phone||'').replace(/\D/g,'');
-      const l=(lang||'').toLowerCase().trim();
-      if(!p || !l) return '';
-      return `${baseUrl}?p=${encodeURIComponent(p)}&l=${encodeURIComponent(l)}`;
+    function mkUrl(row){
+      const explicitId=String(row.fpoId||row.id||row.uid||row.fpoCode||'').trim();
+      if(explicitId) return `${baseUrl}?fpo=${encodeURIComponent(explicitId)}`;
+
+      const fallbackSlug=String(row.fpoName||'')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'');
+      if(!fallbackSlug) return '';
+      return `${baseUrl}?fpo=${encodeURIComponent(fallbackSlug)}`;
+    }
+
+    function queueKey(row){
+      if(!row.ready) return '-';
+      return `${queueConfig.namespace}:${row.phone}:${row.language}`;
     }
 
     function prepareRows(rows){
       return rows.map(r=>{
-        const url=mkUrl(r.phone, r.language);
-        return {...r, phone:(r.phone||'').replace(/\D/g,''), language:(r.language||'').toLowerCase(), url, ready:!!url};
+        const url=mkUrl(r);
+        const phone=(r.phone||'').replace(/\D/g,'');
+        const language=(r.language||'').toLowerCase();
+        const ready=!!url;
+        const queueJob = ready ? QueueUtils.buildFpoQueueJob({...r, phone, language}, queueConfig) : null;
+        return {...r, phone, language, url, ready, queueJob};
       });
     }
 
@@ -87,6 +105,9 @@
         <span class="badge">Total: ${total}</span>
         <span class="badge">Ready: ${ready}</span>
         <span class="badge">Missing: ${miss}</span>
+        <span class="badge">Queue namespace: ${esc(queueConfig.namespace || 'n/a')}</span>
+        <span class="badge">Rate/s: ${esc(queueConfig.antiBan.rateLimitPerSecond)}</span>
+        <span class="badge">Burst cap: ${esc(queueConfig.antiBan.burstCap)}</span>
         ${langBadges}
       `;
     }
@@ -118,16 +139,24 @@
           <div>${esc(r.language||'-')}</div>
           <div class="hide-sm">${esc(r.state||'-')}</div>
           <div class="${r.ready?'status-ok':'status-miss'}">${r.ready?'Ready':'Missing'}</div>
+          <div class="mono">${esc(queueKey(r))}</div>
           <div>${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a>`:'-'}</div>
         `;
         list.appendChild(d);
       });
     }
 
-    fetch('./fpo-links-data.json')
-      .then(r=>r.json())
-      .then(rows=>{ all=prepareRows(rows); hydrateFilters(all); render(); })
-      .catch(()=>{ byId('stats').innerHTML='<span class="badge">Could not load fpo-links-data.json</span>'; });
+    Promise.all([
+      fetch('./fpo-whatsapp-queue-config.json').then(r=>r.ok?r.json():QueueUtils.DEFAULT_CONFIG).catch(()=>QueueUtils.DEFAULT_CONFIG),
+      fetch('./fpo-links-data.json').then(r=>r.json())
+    ])
+      .then(([cfg, rows])=>{
+        queueConfig = {...QueueUtils.DEFAULT_CONFIG, ...cfg, antiBan: {...QueueUtils.DEFAULT_CONFIG.antiBan, ...(cfg.antiBan||{}), retry: {...QueueUtils.DEFAULT_CONFIG.antiBan.retry, ...((cfg.antiBan||{}).retry||{})}};
+        all=prepareRows(rows);
+        hydrateFilters(all);
+        render();
+      })
+      .catch(()=>{ byId('stats').innerHTML='<span class="badge">Could not load required JSON files</span>'; });
 
     ;['q','state','lang','status'].forEach(id=>byId(id).addEventListener(id==='q'?'input':'change',render));
     byId('clear').onclick=()=>{ byId('q').value=''; byId('state').value=''; byId('lang').value=''; byId('status').value=''; render(); };
