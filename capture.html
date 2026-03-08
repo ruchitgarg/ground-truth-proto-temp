@@ -63,13 +63,12 @@
   </div>
 
   <script>
-    const SUPABASE_URL='https://nzhkjjnsmakqxuvfigme.supabase.co';
-    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56aGtqam5zbWFrcXh1dmZpZ21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwODU4NTIsImV4cCI6MjA3NzY2MTg1Mn0.-R-2Pk1gl1DmjKe6JsVBYKZgQL7k2Zfajrn1TcbIOjs';
+    const UPLOAD_API_URL='https://mission-control-psi-ten.vercel.app/api/ground-truth/upload';
 
     const i18n = {
-      en:{name:'English',step1:'Step 1 of 2',step2:'Step 2 of 2',title:'Take photo or video',sub:'Capture a clear field or crop photo.',upload:'Upload Photo / Video',submit:'Submit',waitingLoc:'Getting location... please allow GPS access.',locReady:'Location captured. You can submit now.',locError:'Location permission is required before submit.',helpNeedLoc:'Location is required before submit.',pickFirst:'Please choose photo/video first.',submitOk:'Submitted successfully.',submitErr:'Submission failed. Please try again.',submitLoading:'Submitting...',waTitle:'Share WhatsApp number for updates',waPlaceholder:'10 digit WhatsApp number',waNote:'Advisory: We will only send crop advisories and occasional offers. We will never ask for OTP.',waSave:'Save Number',waSaving:'Saving...',waSaved:'WhatsApp number captured.',waSaveErr:'Could not save number. Please try again.',waInvalid:'Enter a valid 10 digit number.'},
-      hi:{name:'हिंदी',step1:'2 में से चरण 1',step2:'2 में से चरण 2',title:'फोटो या वीडियो लें',sub:'खेत या फसल की साफ फोटो लें।',upload:'फोटो / वीडियो अपलोड करें',submit:'सबमिट करें',waitingLoc:'लोकेशन ली जा रही है... GPS अनुमति दें।',locReady:'लोकेशन मिल गई। अब सबमिट कर सकते हैं।',locError:'सबमिट से पहले लोकेशन अनुमति जरूरी है।',helpNeedLoc:'सबमिट से पहले लोकेशन अनिवार्य है।',pickFirst:'पहले फोटो/वीडियो चुनें।',submitOk:'सफलतापूर्वक सबमिट हुआ।',submitErr:'सबमिट नहीं हो पाया। फिर से कोशिश करें।',submitLoading:'सबमिट हो रहा है...',waTitle:'अपडेट के लिए WhatsApp नंबर दें',waPlaceholder:'10 अंकों का WhatsApp नंबर',waNote:'सलाह: हम सिर्फ खेती सलाह और कभी-कभी ऑफर भेजेंगे। हम कभी OTP नहीं मांगेंगे।',waSave:'नंबर सेव करें',waSaving:'सेव हो रहा है...',waSaved:'WhatsApp नंबर सेव हो गया।',waSaveErr:'नंबर सेव नहीं हुआ। दोबारा कोशिश करें।',waInvalid:'कृपया सही 10 अंकों का नंबर दर्ज करें।'},
-      pa:{name:'ਪੰਜਾਬੀ',step1:'2 ਵਿੱਚੋਂ ਕਦਮ 1',step2:'2 ਵਿੱਚੋਂ ਕਦਮ 2',title:'ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਲਓ',sub:'ਖੇਤ ਜਾਂ ਫਸਲ ਦੀ ਸਾਫ ਫੋਟੋ ਲਓ।',upload:'ਫੋਟੋ / ਵੀਡੀਓ ਅੱਪਲੋਡ ਕਰੋ',submit:'ਸਬਮਿਟ ਕਰੋ',waitingLoc:'ਲੋਕੇਸ਼ਨ ਲਈ ਉਡੀਕ... GPS ਮਨਜ਼ੂਰੀ ਦਿਓ।',locReady:'ਲੋਕੇਸ਼ਨ ਮਿਲ ਗਈ। ਹੁਣ ਸਬਮਿਟ ਕਰ ਸਕਦੇ ਹੋ।',locError:'ਸਬਮਿਟ ਤੋਂ ਪਹਿਲਾਂ ਲੋਕੇਸ਼ਨ ਮਨਜ਼ੂਰੀ ਜ਼ਰੂਰੀ ਹੈ।',helpNeedLoc:'ਸਬਮਿਟ ਤੋਂ ਪਹਿਲਾਂ ਲੋਕੇਸ਼ਨ ਲਾਜ਼ਮੀ ਹੈ।',pickFirst:'ਪਹਿਲਾਂ ਫੋਟੋ/ਵੀਡੀਓ ਚੁਣੋ।',submitOk:'ਸਫਲਤਾਪੂਰਵਕ ਸਬਮਿਟ ਹੋਇਆ।',submitErr:'ਸਬਮਿਟ ਨਹੀਂ ਹੋਇਆ। ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',submitLoading:'ਸਬਮਿਟ ਹੋ ਰਿਹਾ ਹੈ...',waTitle:'ਅਪਡੇਟ ਲਈ WhatsApp ਨੰਬਰ ਦਿਓ',waPlaceholder:'10 ਅੰਕਾਂ ਦਾ WhatsApp ਨੰਬਰ',waNote:'ਸਲਾਹ: ਅਸੀਂ ਸਿਰਫ ਖੇਤੀ ਸਲਾਹ ਅਤੇ ਕਦੇ-ਕਦੇ ਆਫਰ ਭੇਜਾਂਗੇ। ਅਸੀਂ ਕਦੇ OTP ਨਹੀਂ ਮੰਗਦੇ।',waSave:'ਨੰਬਰ ਸੇਵ ਕਰੋ',waSaving:'ਸੇਵ ਹੋ ਰਿਹਾ ਹੈ...',waSaved:'WhatsApp ਨੰਬਰ ਸੇਵ ਹੋ ਗਿਆ।',waSaveErr:'ਨੰਬਰ ਸੇਵ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',waInvalid:'ਸਹੀ 10 ਅੰਕਾਂ ਦਾ ਨੰਬਰ ਭਰੋ।'}
+      en:{name:'English',step1:'Step 1 of 2',step2:'Step 2 of 2',title:'Take photo or video',sub:'Capture a clear field or crop photo.',upload:'Upload Photo / Video',submit:'Submit',waitingLoc:'Getting location... please allow GPS access.',locReady:'Location captured. You can submit now.',locError:'Location permission is required before submit.',helpNeedLoc:'Location is required before submit.',pickFirst:'Please choose photo/video first.',submitOk:'Submitted successfully.',submitErr:'Upload failed. Please try again.',submitLoading:'Uploading... this may take a few seconds.',waTitle:'Share WhatsApp number for updates',waPlaceholder:'10 digit WhatsApp number',waNote:'Advisory: We will only send crop advisories and occasional offers. We will never ask for OTP.',waSave:'Save Number',waSaving:'Saving...',waSaved:'WhatsApp number saved on this device.',waSaveErr:'Could not save number. Please try again.',waInvalid:'Enter a valid 10 digit number.'},
+      hi:{name:'हिंदी',step1:'2 में से चरण 1',step2:'2 में से चरण 2',title:'फोटो या वीडियो लें',sub:'खेत या फसल की साफ फोटो लें।',upload:'फोटो / वीडियो अपलोड करें',submit:'सबमिट करें',waitingLoc:'लोकेशन ली जा रही है... GPS अनुमति दें।',locReady:'लोकेशन मिल गई। अब सबमिट कर सकते हैं।',locError:'सबमिट से पहले लोकेशन अनुमति जरूरी है।',helpNeedLoc:'सबमिट से पहले लोकेशन अनिवार्य है।',pickFirst:'पहले फोटो/वीडियो चुनें।',submitOk:'सफलतापूर्वक सबमिट हुआ।',submitErr:'अपलोड नहीं हो पाया। फिर से कोशिश करें।',submitLoading:'अपलोड हो रहा है... कुछ सेकंड लग सकते हैं।',waTitle:'अपडेट के लिए WhatsApp नंबर दें',waPlaceholder:'10 अंकों का WhatsApp नंबर',waNote:'सलाह: हम सिर्फ खेती सलाह और कभी-कभी ऑफर भेजेंगे। हम कभी OTP नहीं मांगेंगे।',waSave:'नंबर सेव करें',waSaving:'सेव हो रहा है...',waSaved:'WhatsApp नंबर इस डिवाइस पर सेव हो गया।',waSaveErr:'नंबर सेव नहीं हुआ। दोबारा कोशिश करें।',waInvalid:'कृपया सही 10 अंकों का नंबर दर्ज करें।'},
+      pa:{name:'ਪੰਜਾਬੀ',step1:'2 ਵਿੱਚੋਂ ਕਦਮ 1',step2:'2 ਵਿੱਚੋਂ ਕਦਮ 2',title:'ਫੋਟੋ ਜਾਂ ਵੀਡੀਓ ਲਓ',sub:'ਖੇਤ ਜਾਂ ਫਸਲ ਦੀ ਸਾਫ ਫੋਟੋ ਲਓ।',upload:'ਫੋਟੋ / ਵੀਡੀਓ ਅੱਪਲੋਡ ਕਰੋ',submit:'ਸਬਮਿਟ ਕਰੋ',waitingLoc:'ਲੋਕੇਸ਼ਨ ਲਈ ਉਡੀਕ... GPS ਮਨਜ਼ੂਰੀ ਦਿਓ।',locReady:'ਲੋਕੇਸ਼ਨ ਮਿਲ ਗਈ। ਹੁਣ ਸਬਮਿਟ ਕਰ ਸਕਦੇ ਹੋ।',locError:'ਸਬਮਿਟ ਤੋਂ ਪਹਿਲਾਂ ਲੋਕੇਸ਼ਨ ਮਨਜ਼ੂਰੀ ਜ਼ਰੂਰੀ ਹੈ।',helpNeedLoc:'ਸਬਮਿਟ ਤੋਂ ਪਹਿਲਾਂ ਲੋਕੇਸ਼ਨ ਲਾਜ਼ਮੀ ਹੈ।',pickFirst:'ਪਹਿਲਾਂ ਫੋਟੋ/ਵੀਡੀਓ ਚੁਣੋ।',submitOk:'ਸਫਲਤਾਪੂਰਵਕ ਸਬਮਿਟ ਹੋਇਆ।',submitErr:'ਅਪਲੋਡ ਨਹੀਂ ਹੋਇਆ। ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',submitLoading:'ਅਪਲੋਡ ਹੋ ਰਿਹਾ ਹੈ... ਕੁਝ ਸਕਿੰਟ ਲੱਗ ਸਕਦੇ ਹਨ।',waTitle:'ਅਪਡੇਟ ਲਈ WhatsApp ਨੰਬਰ ਦਿਓ',waPlaceholder:'10 ਅੰਕਾਂ ਦਾ WhatsApp ਨੰਬਰ',waNote:'ਸਲਾਹ: ਅਸੀਂ ਸਿਰਫ ਖੇਤੀ ਸਲਾਹ ਅਤੇ ਕਦੇ-ਕਦੇ ਆਫਰ ਭੇਜਾਂਗੇ। ਅਸੀਂ ਕਦੇ OTP ਨਹੀਂ ਮੰਗਦੇ।',waSave:'ਨੰਬਰ ਸੇਵ ਕਰੋ',waSaving:'ਸੇਵ ਹੋ ਰਿਹਾ ਹੈ...',waSaved:'WhatsApp ਨੰਬਰ ਇਸ ਡਿਵਾਈਸ ਤੇ ਸੇਵ ਹੋ ਗਿਆ।',waSaveErr:'ਨੰਬਰ ਸੇਵ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।',waInvalid:'ਸਹੀ 10 ਅੰਕਾਂ ਦਾ ਨੰਬਰ ਭਰੋ।'}
     };
 
     const params=new URLSearchParams(location.search);
@@ -78,9 +77,8 @@
     const normalizeLang=(raw)=>{const v=String(raw||'').toLowerCase().trim();if(!v)return '';if(i18n[v])return v;const b=v.split('-')[0];return i18n[b]?b:'';};
     const detectBrowserLang=()=>{const c=[...(navigator.languages||[]),navigator.language].filter(Boolean);for(const x of c){const n=normalizeLang(x);if(n)return n;}return 'hi';};
     const getTopLangs=()=>{const o=[];const add=(code)=>{if(code&&i18n[code]&&!o.includes(code))o.push(code);};add(normalizeLang(params.get('l'))||detectBrowserLang());(navigator.languages||[]).forEach(l=>add(normalizeLang(l)));add(normalizeLang(navigator.language));if(/Asia\//i.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))add('hi');add('en');supported.forEach(add);return o.slice(0,3);};
-    const extractId=(h)=>{const m=String(h||'').match(/id=eq\.([0-9a-f-]{36})/i);return m?m[1]:null;};
 
-    const st={lang:normalizeLang(params.get('l'))||detectBrowserLang(),selectedMedia:null,location:null,submitted:false,submitting:false,payload:null,captureId:null,sourcePhone:params.get('p')||'',fpoId:params.get('fpo_id')||params.get('f')||''};
+    const st={lang:normalizeLang(params.get('l'))||detectBrowserLang(),selectedMedia:null,location:null,submitted:false,submitting:false,sourcePhone:params.get('p')||''};
 
     function setStatus(kind,msg){const el=byId('status');el.className=`status ${kind}`;el.textContent=msg;}
     function updateHelp(){const t=i18n[st.lang];const el=byId('help');if(st.location){el.className='helper hidden';el.textContent='';}else{el.className='helper warn';el.textContent=t.helpNeedLoc;}}
@@ -109,33 +107,55 @@
       setStatus('info',t.waitingLoc);
       if(!navigator.geolocation){setStatus('error',t.locError);updateHelp();return;}
       navigator.geolocation.getCurrentPosition((pos)=>{
-        st.location={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
+        st.location={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,timestamp:new Date(pos.timestamp||Date.now()).toISOString()};
         setStatus('success',t.locReady);
         updateHelp();
         refreshSubmit();
       },()=>{st.location=null;setStatus('error',t.locError);updateHelp();refreshSubmit();},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
     }
 
-    async function postCapture(row){
-      const resp=await fetch(`${SUPABASE_URL}/rest/v1/ground_truth_captures`,{
-        method:'POST',
-        headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'return=minimal'},
-        body:JSON.stringify(row)
+    function fileToBase64(file){
+      return new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>{
+          const result=String(reader.result||'');
+          const b64=result.includes(',')?result.split(',')[1]:result;
+          if(!b64){reject(new Error('Unable to read media file'));return;}
+          resolve(b64);
+        };
+        reader.onerror=()=>reject(new Error('Unable to read media file'));
+        reader.readAsDataURL(file);
       });
-      if(!resp.ok)throw new Error((await resp.text())||`HTTP ${resp.status}`);
-      st.captureId=extractId(resp.headers.get('location')||resp.headers.get('content-location'));
     }
 
-    async function patchWhatsapp(number, consentAt){
-      const q=st.captureId
-        ? `id=eq.${encodeURIComponent(st.captureId)}`
-        : `phone=eq.${encodeURIComponent(st.sourcePhone)}&media_name=eq.${encodeURIComponent(st.payload.media_name)}&location_timestamp=eq.${encodeURIComponent(st.payload.location_timestamp)}`;
-      const resp=await fetch(`${SUPABASE_URL}/rest/v1/ground_truth_captures?${q}`,{
-        method:'PATCH',
-        headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Prefer:'return=minimal'},
-        body:JSON.stringify({whatsapp_number:number,whatsapp_consent_at:consentAt})
-      });
-      if(!resp.ok)throw new Error((await resp.text())||`HTTP ${resp.status}`);
+    async function uploadCapture(file){
+      const captureAt=new Date().toISOString();
+      const data=await fileToBase64(file);
+      const payload={
+        phone:st.sourcePhone||undefined,
+        data,
+        mimeType:file.type||'application/octet-stream',
+        fileName:file.name||`capture-${Date.now()}`,
+        captureAt,
+        location:{
+          lat:st.location.lat,
+          lng:st.location.lng,
+          accuracy:st.location.accuracy??null,
+          timestamp:st.location.timestamp||captureAt
+        },
+        language:st.lang,
+        userAgent:navigator.userAgent,
+        platform:navigator.platform
+      };
+
+      const resp=await fetch(UPLOAD_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      let body=null;
+      try{body=await resp.json();}catch{body=null;}
+      if(!resp.ok||!body?.ok){
+        const msg=body?.error||body?.message||`HTTP ${resp.status}`;
+        throw new Error(String(msg));
+      }
+      return body;
     }
 
     const langWrap=byId('langBtns');
@@ -148,28 +168,14 @@
       const t=i18n[st.lang];
       if(!st.selectedMedia){setStatus('error',t.pickFirst);return;}
       if(!st.location){setStatus('error',t.locError);return;}
+
       st.submitting=true;
       byId('submit').textContent=t.submitLoading;
       byId('submit').disabled=true;
-
-      const nowIso=new Date().toISOString();
-      st.payload={
-        fpo_id:st.fpoId||null,
-        phone:st.sourcePhone||null,
-        language:st.lang,
-        media_name:st.selectedMedia.name,
-        media_size:st.selectedMedia.size,
-        media_type:st.selectedMedia.type||'media/unknown',
-        lat:st.location.lat,
-        lng:st.location.lng,
-        accuracy:st.location.accuracy??null,
-        location_timestamp:nowIso,
-        submitted_at:nowIso,
-        raw_payload:{source_query:Object.fromEntries(params.entries()),user_agent:navigator.userAgent}
-      };
+      setStatus('info',t.submitLoading);
 
       try{
-        await postCapture(st.payload);
+        await uploadCapture(st.selectedMedia);
         st.submitted=true;
         byId('step').textContent=t.step2;
         setStatus('success',t.submitOk);
@@ -185,24 +191,23 @@
       }
     };
 
-    byId('waSave').onclick=async()=>{
+    byId('waSave').onclick=()=>{
       const t=i18n[st.lang];
       const num=byId('waNumber').value.replace(/\D/g,'');
       if(num.length!==10){setStatus('error',t.waInvalid);return;}
-      if(!st.submitted||!st.payload){setStatus('error',t.submitErr);return;}
       const btn=byId('waSave');
       const input=byId('waNumber');
       btn.disabled=true;
       input.disabled=true;
       btn.textContent=t.waSaving;
       try{
-        await patchWhatsapp(num,new Date().toISOString());
+        localStorage.setItem('gt_capture_whatsapp', JSON.stringify({number:num,savedAt:new Date().toISOString(),phoneFromUrl:st.sourcePhone||null,lang:st.lang}));
         setStatus('success',t.waSaved);
-      }catch(err){
+      }catch{
         btn.disabled=false;
         input.disabled=false;
         btn.textContent=t.waSave;
-        setStatus('error',`${t.waSaveErr} ${String(err.message||'').slice(0,140)}`);
+        setStatus('error',t.waSaveErr);
         return;
       }
       btn.textContent=t.waSave;
