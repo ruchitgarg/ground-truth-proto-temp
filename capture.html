@@ -22,6 +22,7 @@
     .helper{font-size:20px;line-height:1.3;margin-top:12px;font-weight:600}
     .helper.warn{color:#b42318}
     .helper.ok{color:#117a35}
+    .helper.hidden{display:none}
     .status{margin-top:10px;padding:10px 12px;border-radius:12px;font-weight:700;font-size:14px}
     .status.info{background:#f2f8ff;color:#1256a0;border:1px solid #d9e8ff}
     .status.error{background:#fff3f3;color:#b42318;border:1px solid #ffd7d7}
@@ -185,8 +186,8 @@
       const t=i18n[st.lang];
       const el=byId('help');
       if(st.location){
-        el.className='helper ok';
-        el.textContent=t.helpLocReady;
+        el.className='helper hidden';
+        el.textContent='';
       } else {
         el.className='helper warn';
         el.textContent=t.helpNeedLoc;
