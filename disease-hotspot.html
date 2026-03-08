@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/><title>Disease Hotspot Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;background:#f5f5f7;color:#111}
+.top{padding:14px 16px;background:#fff;border-bottom:1px solid #e6e6eb;position:sticky;top:0;z-index:10}
+.hero{font-size:22px;font-weight:700}.muted{font-size:12px;color:#666}
+.filters{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin-top:10px}
+.filters input,.filters select,.filters button{height:38px;border:1px solid #ddd;border-radius:10px;padding:0 10px;font-size:13px;background:#fff}
+.filters button{background:#111;color:#fff;border:0;font-weight:600;cursor:pointer}
+.app{display:grid;grid-template-columns:380px 1fr 360px;gap:10px;padding:10px;height:calc(100vh - 130px)}
+.panel{background:#fff;border:1px solid #e6e6eb;border-radius:16px;overflow:hidden}.head{padding:10px 12px;border-bottom:1px solid #eee;color:#666;font-size:13px}
+.list{overflow:auto;height:100%}.card{padding:8px;margin:8px;border:1px solid #eee;border-radius:12px;cursor:pointer}.card.active{outline:2px solid #11111122}
+.chip{display:inline-block;background:#f2f2f5;border:1px solid #e6e6eb;border-radius:999px;padding:2px 8px;font-size:11px;margin-right:6px}.hot{background:#ffe7e7;border-color:#ffb9b9}
+.map{height:100%}.detail{padding:12px;overflow:auto;height:100%}
+.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dot{width:12px;height:12px;border-radius:50%}
+@media(max-width:1100px){.filters{grid-template-columns:repeat(2,minmax(120px,1fr))}.app{grid-template-columns:1fr;height:auto}.panel{min-height:45vh}}
+</style></head>
+<body><div class='top'><div class='hero'>Disease Hotspot Map</div><div class='muted'>Pre-filtered inbox for disease monitoring and cluster hotspots</div>
+<div class='filters'>
+<select id='qDisease'><option value=''>All diseases</option><option>Leaf Blight</option><option>Rust</option><option>Wilt</option><option>Pest Attack</option></select>
+<select id='qSeverity'><option value=''>All severity</option><option value='high'>High</option><option value='medium'>Medium</option><option value='low'>Low</option></select>
+<input id='qState' placeholder='State'/>
+<input id='qDistrict' placeholder='District'/>
+<input id='qPhone' placeholder='Phone'/>
+<button id='clear'>Clear</button>
+</div>
+<div class='legend' style='margin-top:8px'><span class='muted'>Hotspot Intensity:</span><span class='dot' style='background:#facc15'></span><span class='muted'>Low</span><span class='dot' style='background:#fb923c'></span><span class='muted'>Medium</span><span class='dot' style='background:#ef4444'></span><span class='muted'>High</span></div>
+</div>
+<div class='app'>
+<section class='panel'><div class='head' id='listHead'>Disease inbox</div><div id='list' class='list'></div></section>
+<section class='panel'><div class='head'>Interactive Hotspot Map</div><div id='map' class='map'></div></section>
+<section class='panel'><div class='head'>Case Details</div><div id='detail' class='detail'>Select a case or map pin.</div></section>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const cases=[
+{id:'c1',phone:'9501822210',state:'Punjab',district:'Mohali',disease:'Leaf Blight',severity:'high',lat:30.7046,lng:76.7179,time:'2026-03-08 06:05',note:'Rapid spread in patch A'},
+{id:'c2',phone:'9876543210',state:'Rajasthan',district:'Jaipur',disease:'Rust',severity:'medium',lat:26.9124,lng:75.7873,time:'2026-03-08 05:50',note:'Localized to edge rows'},
+{id:'c3',phone:'9911223344',state:'Haryana',district:'Karnal',disease:'Wilt',severity:'high',lat:29.6857,lng:76.9905,time:'2026-03-08 05:40',note:'Visible wilting in multiple plots'},
+{id:'c4',phone:'9898989898',state:'Punjab',district:'Ludhiana',disease:'Pest Attack',severity:'low',lat:30.9010,lng:75.8573,time:'2026-03-08 05:10',note:'Initial signs only'},
+{id:'c5',phone:'9760572040',state:'Uttar Pradesh',district:'Meerut',disease:'Leaf Blight',severity:'medium',lat:28.9845,lng:77.7064,time:'2026-03-08 04:55',note:'Scattered symptoms'}
+];
+const map=L.map('map').setView([27.5,77],5);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+const layer=L.layerGroup().addTo(map);
+let filtered=[],selected='';
+function color(sev){if(sev==='high')return '#ef4444';if(sev==='medium')return '#fb923c';return '#facc15';}
+function esc(v){return String(v??'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]))}
+function pass(c){if(qDisease.value&&c.disease!==qDisease.value)return false;if(qSeverity.value&&c.severity!==qSeverity.value)return false;if(qState.value&& !c.state.toLowerCase().includes(qState.value.toLowerCase()))return false;if(qDistrict.value&& !c.district.toLowerCase().includes(qDistrict.value.toLowerCase()))return false;if(qPhone.value&& !c.phone.includes(qPhone.value.trim()))return false;return true}
+function draw(){filtered=cases.filter(pass);listHead.textContent=`Disease inbox (${filtered.length})`;list.innerHTML='';layer.clearLayers();const bounds=[];
+filtered.forEach(c=>{const card=document.createElement('div');card.className='card '+(c.severity==='high'?'hot':'')+(selected===c.id?' active':'');card.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><div style='margin-top:6px;font-size:13px;font-weight:600'>${c.phone}</div><div class='muted'>${c.district}, ${c.state}</div><div class='muted'>${c.time}</div>`;card.onclick=()=>select(c.id);list.appendChild(card);
+const m=L.circleMarker([c.lat,c.lng],{radius:c.severity==='high'?12:9,color:color(c.severity),fillColor:color(c.severity),fillOpacity:.75,weight:2}).addTo(layer).bindPopup(`<b>${esc(c.disease)}</b><br>${esc(c.district)}, ${esc(c.state)}<br>${esc(c.phone)}`);m.on('click',()=>select(c.id));c._marker=m;bounds.push([c.lat,c.lng]);});
+if(bounds.length)map.fitBounds(bounds,{padding:[30,30]}); if(filtered.length&&!selected)select(filtered[0].id);
+if(!filtered.length){detail.textContent='No matching disease cases.';selected='';}
+}
+function select(id){selected=id;drawCardOnly();const c=filtered.find(x=>x.id===id)||cases.find(x=>x.id===id);if(!c)return;detail.innerHTML=`<div><span class='chip'>${c.disease}</span><span class='chip'>${c.severity.toUpperCase()}</span></div><h3 style='margin:10px 0'>${c.district}, ${c.state}</h3><div class='muted'>Phone: ${c.phone}</div><div class='muted'>Time: ${c.time}</div><p style='font-size:14px'>${c.note}</p>`; if(c._marker){map.flyTo(c._marker.getLatLng(),10,{duration:.4});c._marker.openPopup();}}
+function drawCardOnly(){document.querySelectorAll('.card').forEach(el=>el.classList.remove('active'));const idx=filtered.findIndex(c=>c.id===selected);if(idx>-1){const el=document.querySelectorAll('.card')[idx];if(el)el.classList.add('active')}}
+[qDisease,qSeverity,qState,qDistrict,qPhone].forEach(el=>el.addEventListener('input',()=>{selected='';draw();}));clear.onclick=()=>{qDisease.value='';qSeverity.value='';qState.value='';qDistrict.value='';qPhone.value='';selected='';draw();};
+draw();
+</script></body></html>
