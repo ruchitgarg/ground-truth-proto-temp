@@ -1,7 +1,7 @@
 [
-  {"id":"c1","phone":"9501822210","state":"Punjab","district":"Mohali","disease":"Leaf Blight","severity":"high","lat":30.7046,"lng":76.7179,"time":"2026-03-08 06:05","note":"Rapid spread in patch A"},
-  {"id":"c2","phone":"9876543210","state":"Rajasthan","district":"Jaipur","disease":"Rust","severity":"medium","lat":26.9124,"lng":75.7873,"time":"2026-03-08 05:50","note":"Localized to edge rows"},
-  {"id":"c3","phone":"9911223344","state":"Haryana","district":"Karnal","disease":"Wilt","severity":"high","lat":29.6857,"lng":76.9905,"time":"2026-03-08 05:40","note":"Visible wilting in multiple plots"},
-  {"id":"c4","phone":"9898989898","state":"Punjab","district":"Ludhiana","disease":"Pest Attack","severity":"low","lat":30.901,"lng":75.8573,"time":"2026-03-08 05:10","note":"Initial signs only"},
-  {"id":"c5","phone":"9760572040","state":"Uttar Pradesh","district":"Meerut","disease":"Leaf Blight","severity":"medium","lat":28.9845,"lng":77.7064,"time":"2026-03-08 04:55","note":"Scattered symptoms"}
+  {"id":"2f5f8be7-422e-4a65-b8f1-f73d56b5a001","phone":"9501822210","state":"Punjab","district":"Mohali","disease":"Leaf Blight","severity":"high","lat":30.7046,"lng":76.7179,"reported_at":"2026-03-08T06:05:00Z","notes":"Rapid spread in patch A","source":"capture"},
+  {"id":"2f5f8be7-422e-4a65-b8f1-f73d56b5a002","phone":"9876543210","state":"Rajasthan","district":"Jaipur","disease":"Rust","severity":"medium","lat":26.9124,"lng":75.7873,"reported_at":"2026-03-08T05:50:00Z","notes":"Localized to edge rows","source":"capture"},
+  {"id":"2f5f8be7-422e-4a65-b8f1-f73d56b5a003","phone":"9911223344","state":"Haryana","district":"Karnal","disease":"Wilt","severity":"high","lat":29.6857,"lng":76.9905,"reported_at":"2026-03-08T05:40:00Z","notes":"Visible wilting in multiple plots","source":"capture"},
+  {"id":"2f5f8be7-422e-4a65-b8f1-f73d56b5a004","phone":"9898989898","state":"Punjab","district":"Ludhiana","disease":"Pest Attack","severity":"low","lat":30.901,"lng":75.8573,"reported_at":"2026-03-08T05:10:00Z","notes":"Initial signs only","source":"capture"},
+  {"id":"2f5f8be7-422e-4a65-b8f1-f73d56b5a005","phone":"9760572040","state":"Uttar Pradesh","district":"Meerut","disease":"Leaf Blight","severity":"medium","lat":28.9845,"lng":77.7064,"reported_at":"2026-03-08T04:55:00Z","notes":"Scattered symptoms","source":"capture"}
 ]
